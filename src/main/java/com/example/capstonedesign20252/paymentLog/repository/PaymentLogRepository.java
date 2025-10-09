@@ -1,6 +1,6 @@
-package com.example.capstonedesign20252.repository;
+package com.example.capstonedesign20252.paymentLog.repository;
 
-import com.example.capstonedesign20252.domain.PaymentLog;
+import com.example.capstonedesign20252.paymentLog.domain.PaymentLog;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PaymentLogRepository extends JpaRepository<PaymentLog, Long> {

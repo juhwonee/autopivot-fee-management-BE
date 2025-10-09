@@ -1,7 +1,7 @@
-package com.example.capstonedesign20252.controller;
+package com.example.capstonedesign20252.paymentLog.controller;
 
-import com.example.capstonedesign20252.dto.PaymentRequestDto;
-import com.example.capstonedesign20252.service.PaymentLogService;
+import com.example.capstonedesign20252.paymentLog.dto.PaymentRequestDto;
+import com.example.capstonedesign20252.paymentLog.service.PaymentLogService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -1,8 +1,8 @@
-package com.example.capstonedesign20252.service;
+package com.example.capstonedesign20252.paymentLog.service;
 
-import com.example.capstonedesign20252.domain.PaymentLog;
-import com.example.capstonedesign20252.dto.PaymentRequestDto;
-import com.example.capstonedesign20252.repository.PaymentLogRepository;
+import com.example.capstonedesign20252.paymentLog.domain.PaymentLog;
+import com.example.capstonedesign20252.paymentLog.dto.PaymentRequestDto;
+import com.example.capstonedesign20252.paymentLog.repository.PaymentLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

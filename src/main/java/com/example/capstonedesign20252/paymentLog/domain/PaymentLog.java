@@ -1,4 +1,4 @@
-package com.example.capstonedesign20252.domain;
+package com.example.capstonedesign20252.paymentLog.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

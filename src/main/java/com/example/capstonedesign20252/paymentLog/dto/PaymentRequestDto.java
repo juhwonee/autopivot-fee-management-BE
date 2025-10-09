@@ -1,6 +1,6 @@
-package com.example.capstonedesign20252.dto;
+package com.example.capstonedesign20252.paymentLog.dto;
 
-import com.example.capstonedesign20252.domain.PaymentLog;
+import com.example.capstonedesign20252.paymentLog.domain.PaymentLog;
 
 public record PaymentRequestDto(
     String name,
