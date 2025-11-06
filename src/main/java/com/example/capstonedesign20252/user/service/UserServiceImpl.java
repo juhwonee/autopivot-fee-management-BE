@@ -5,6 +5,7 @@ import com.example.capstonedesign20252.user.dto.LoginRequestDto;
 import com.example.capstonedesign20252.user.dto.LoginResponseDto;
 import com.example.capstonedesign20252.user.dto.SignUpRequestDto;
 import com.example.capstonedesign20252.user.dto.SignUpResponseDto;
+import com.example.capstonedesign20252.user.dto.UserInfoResponseDto;
 import com.example.capstonedesign20252.user.exception.UserErrorCode;
 import com.example.capstonedesign20252.user.exception.UserException;
 import com.example.capstonedesign20252.user.repository.UserRepository;
@@ -44,5 +45,11 @@ public class UserServiceImpl implements UserService {
     }
 
     return LoginResponseDto.from(user);
+  }
+
+  @Override
+  public UserInfoResponseDto getUserInfo(Long userId) {
+    return UserInfoResponseDto.from(userRepository.findById(userId)
+        .orElseThrow(() -> new IllegalArgumentException("해당 유저를 찾을 수 없습니다.")));
   }
 }
