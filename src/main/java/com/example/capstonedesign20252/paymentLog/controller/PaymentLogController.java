@@ -8,16 +8,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
+@RequestMapping("/api/payments")
 public class PaymentLogController {
 
   private final PaymentLogService paymentLogService;
   private static final Logger logger = LoggerFactory.getLogger(PaymentLogController.class);
 
-  @PostMapping("/api/payments/log")
+  @PostMapping("/log")
   public ResponseEntity<Void> logPayment(@RequestBody PaymentRequestDto requestDto) {
     try {
       paymentLogService.savePaymentLog(requestDto);
