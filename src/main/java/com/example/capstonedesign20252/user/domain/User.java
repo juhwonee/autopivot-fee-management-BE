@@ -30,22 +30,26 @@ public class User extends BaseEntity {
   @Column(unique = true, nullable = false)
   private String email;
 
-  @Column(nullable = false)
+  @Column
   private String password;
 
   @Column(name = "kakao_id", unique = true)
   private String kakaoId;
+
+  @Column(name = "profile_image")
+  private String profileImage;
 
   @Enumerated(EnumType.STRING)
   @Column(nullable = false)
   private LoginType loginType;
 
   @Builder
-  public User(String name, String email, String password, String kakaoId, LoginType loginType){
+  public User(String name, String email, String password, String kakaoId, String profileImage, LoginType loginType){
     this.name = name;
     this.email = email;
     this.password = password;
     this.kakaoId = kakaoId;
+    this.profileImage = profileImage;
     this.loginType = loginType;
   }
 
@@ -58,12 +62,19 @@ public class User extends BaseEntity {
         .build();
   }
 
-  public static User createKakaoUser(String name, String email, String kakaoId, LoginType loginType){
+  public static User createKakaoUser(String name, String email, String kakaoId, String profileImage){
     return User.builder()
         .name(name)
         .email(email)
         .kakaoId(kakaoId)
+        .profileImage(profileImage)
         .loginType(LoginType.KAKAO)
         .build();
+  }
+
+  public void updateKakaoInfo(String name, String email, String profileImage) {
+    if (name != null) this.name = name;
+    if (email != null) this.email = email;
+    if (profileImage != null) this.profileImage = profileImage;
   }
 }

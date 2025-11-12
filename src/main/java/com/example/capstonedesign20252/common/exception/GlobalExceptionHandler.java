@@ -1,9 +1,12 @@
 package com.example.capstonedesign20252.common.exception;
 
 
+import com.example.capstonedesign20252.auth.exception.KakaoErrorCode;
+import com.example.capstonedesign20252.auth.exception.KakaoException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -27,6 +30,18 @@ public class GlobalExceptionHandler {
             "예상치 못한 서버 오류가 발생했습니다.",
             "UNEXPECTED_ERROR",
             HttpStatus.INTERNAL_SERVER_ERROR.value()
+        ));
+  }
+
+  @ExceptionHandler(KakaoException.class)
+  public ResponseEntity<ErrorResponseDto> handleKakaoException(KakaoException e){
+    KakaoErrorCode errorCode = e.getErrorCode();
+    return ResponseEntity
+        .status(errorCode.getStatus())
+        .body(new ErrorResponseDto(
+            errorCode.getMessage(),
+            errorCode.getErrorCode(),
+            errorCode.getStatus()
         ));
   }
 }
