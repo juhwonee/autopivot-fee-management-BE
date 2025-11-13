@@ -170,6 +170,8 @@ public class KakaoAuthClient {
     }
 
     MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
+    log.info("🔥 redirect_uri being sent to Kakao = {}", kakaoProperties.getRedirectUri());
+
     params.add("grant_type", "authorization_code");
     params.add("client_id", kakaoProperties.getClientId());
     params.add("redirect_uri", kakaoProperties.getRedirectUri());

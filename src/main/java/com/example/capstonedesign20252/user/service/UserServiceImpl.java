@@ -43,7 +43,6 @@ public class UserServiceImpl implements UserService {
     if(!passwordEncoder.matches(dto.password(), user.getPassword())){
       throw new UserException(UserErrorCode.INVALID_PASSWORD);
     }
-
     return LoginResponseDto.from(user);
   }
 
