@@ -33,6 +33,7 @@ public class KakaoAuthController {
   @GetMapping("/kakao-callback")
   public RedirectView KakaoCallback(@RequestParam String code){
     log.info("카카오 인가코드 수신 완료");
+    log.info(code);
 
     try{
       String jwtToken = kakaoAuthService.loginWithKakao(code);

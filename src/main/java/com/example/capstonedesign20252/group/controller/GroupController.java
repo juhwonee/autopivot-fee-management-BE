@@ -24,7 +24,7 @@ public class GroupController {
 
   private final GroupService groupService;
 
-  @PostMapping("/{userId}")
+  @PostMapping("/{userId:\\d+}")
   public ResponseEntity<GroupResponseDto> createGroup(
       @PathVariable Long userId,
       @RequestBody createGroupRequestDto dto
@@ -32,7 +32,7 @@ public class GroupController {
     return ResponseEntity.status(HttpStatus.CREATED).body(groupService.createGroup(userId, dto));
   }
 
-  @GetMapping("/{groupId}")
+  @GetMapping("/{groupId:\\d+}")
   public ResponseEntity<GroupResponseDto> getGroup(@PathVariable Long groupId){
     return ResponseEntity.ok(groupService.getGroup(groupId));
   }
@@ -50,7 +50,7 @@ public class GroupController {
     return ResponseEntity.ok(groupService.getUserGroups(userId));
   }
 
-  @DeleteMapping("/{groupId}")
+  @DeleteMapping("/{groupId:\\d+}")
   public ResponseEntity<Void> deleteGroup(@PathVariable Long groupId){
     groupService.deleteGroup(groupId);
     return ResponseEntity.noContent().build();
