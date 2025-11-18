@@ -12,7 +12,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -38,19 +37,19 @@ public class Group {
   @Column(name = "description", nullable = false)
   private String description;
 
+  @Column(nullable = false)
+  @Enumerated(EnumType.STRING)
+  private GroupCategory groupCategory;
+
   @Column(name = "fee", nullable = false)
   private Integer fee;
 
-  @Enumerated(EnumType.STRING)
-  private FeePaymentCycle paymentCycle;
-
-  private LocalDate nextPaymentDate;
-
   @Builder
-  public Group(User user, String groupName, String description, Integer fee){
+  public Group(User user, String groupName, String description, GroupCategory groupCategory, Integer fee){
     this.user = user;
     this.groupName = groupName;
     this.description = description;
+    this.groupCategory = groupCategory;
     this.fee = fee;
   }
 }

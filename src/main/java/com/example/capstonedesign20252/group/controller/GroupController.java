@@ -24,12 +24,21 @@ public class GroupController {
 
   private final GroupService groupService;
 
-  @PostMapping("/{userId:\\d+}")
+  @PostMapping
   public ResponseEntity<GroupResponseDto> createGroup(
-      @PathVariable Long userId,
+      @AuthenticationPrincipal UserDetails userDetails,
       @RequestBody createGroupRequestDto dto
   ) {
+    Long userId = Long.parseLong(userDetails.getUsername());
     return ResponseEntity.status(HttpStatus.CREATED).body(groupService.createGroup(userId, dto));
+  }
+
+  @GetMapping("/my")
+  public ResponseEntity<List<GroupResponseDto>> getMyGroups(
+      @AuthenticationPrincipal UserDetails userDetails
+  ){
+    Long userId = Long.parseLong(userDetails.getUsername());
+    return ResponseEntity.ok(groupService.getUserGroups(userId));
   }
 
   @GetMapping("/{groupId:\\d+}")
@@ -40,14 +49,6 @@ public class GroupController {
   @GetMapping
   public ResponseEntity<List<GroupResponseDto>> getAllGroups(){
     return ResponseEntity.ok(groupService.getAllGroups());
-  }
-
-  @GetMapping("/my")
-  public ResponseEntity<List<GroupResponseDto>> getMyGroups(
-      @AuthenticationPrincipal UserDetails userDetails
-  ){
-    Long userId = Long.parseLong(userDetails.getUsername());
-    return ResponseEntity.ok(groupService.getUserGroups(userId));
   }
 
   @DeleteMapping("/{groupId:\\d+}")

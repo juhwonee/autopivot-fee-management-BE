@@ -71,6 +71,7 @@ public class GroupServiceImpl implements GroupService {
         group.getUser().getId(),
         group.getGroupName(),
         group.getDescription(),
+        group.getGroupCategory(),
         group.getFee());
   }
 }
