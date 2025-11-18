@@ -8,6 +8,7 @@ import com.example.capstonedesign20252.group.dto.createGroupRequestDto;
 import com.example.capstonedesign20252.group.repository.GroupRepository;
 import com.example.capstonedesign20252.groupMember.domain.GroupMember;
 import com.example.capstonedesign20252.groupMember.repository.GroupMemberRepository;
+import com.example.capstonedesign20252.user.domain.LoginType;
 import com.example.capstonedesign20252.user.domain.User;
 import com.example.capstonedesign20252.user.repository.UserRepository;
 import java.util.List;
@@ -28,6 +29,7 @@ public class GroupServiceImpl implements GroupService {
   private final GroupMemberRepository groupMemberRepository;
   private final ExcelParserService excelParserService;
 
+  @Transactional  // ⭐ 여기에 @Transactional 추가 (readOnly = true가 아님)
   public GroupResponseDto createGroup(Long userId, createGroupRequestDto dto, MultipartFile memberFile) {
     User user = userRepository.findById(userId)
                               .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
@@ -75,10 +77,12 @@ public class GroupServiceImpl implements GroupService {
 
             // 기존 사용자가 없으면 새로 생성
             if (memberUser == null) {
+              // ⭐ 핵심 수정: loginType 추가!
               User newUser = User.builder()
                                  .name(memberData.name())
                                  .phone(memberData.phone())
                                  .email(memberData.email())
+                                 .loginType(LoginType.EXCEL)  // ✅ 추가!
                                  .build();
               memberUser = userRepository.save(newUser);
               log.debug("신규 사용자 생성: {}", memberData.name());
@@ -117,8 +121,6 @@ public class GroupServiceImpl implements GroupService {
 
         log.info("멤버 추가 완료: 성공 {}명, 실패 {}명", successCount, failCount);
 
-        log.info("엑셀 파일 처리 완료! (멤버 저장 로직은 추후 구현)");
-
       } catch (Exception e) {
         log.error("엑셀 파일 처리 중 오류 발생: {}", e.getMessage(), e);
         // 그룹은 생성되었지만 멤버 추가만 실패
@@ -134,24 +136,24 @@ public class GroupServiceImpl implements GroupService {
   @Override
   public GroupResponseDto getGroup(Long groupId) {
     Group group = groupRepository.findById(groupId)
-        .orElseThrow(() -> new IllegalArgumentException("해당 그룹이 존재하지 않습니다."));
+                                 .orElseThrow(() -> new IllegalArgumentException("해당 그룹이 존재하지 않습니다."));
     return toDto(group);
   }
 
   @Override
   public List<GroupResponseDto> getAllGroups() {
     return groupRepository.findAll()
-        .stream()
-        .map(this::toDto)
-        .toList();
+                          .stream()
+                          .map(this::toDto)
+                          .toList();
   }
 
   @Override
   public List<GroupResponseDto> getUserGroups(Long userId) {
     return groupRepository.findByUserId(userId)
-        .stream()
-        .map(this::toDto)
-        .toList();
+                          .stream()
+                          .map(this::toDto)
+                          .toList();
   }
 
   @Override
