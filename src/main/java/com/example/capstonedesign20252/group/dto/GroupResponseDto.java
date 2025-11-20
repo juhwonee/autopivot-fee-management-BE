@@ -7,6 +7,7 @@ public record GroupResponseDto(
     Long groupId,
     Long leaderId,
     String groupName,
+    String accountName,
     String description,
     GroupCategory groupCategory,
     Integer fee
@@ -16,6 +17,7 @@ public record GroupResponseDto(
         group.getId(),
         group.getUser().getId(),
         group.getGroupName(),
+        group.getAccountName(),
         group.getDescription(),
         group.getGroupCategory(),
         group.getFee()

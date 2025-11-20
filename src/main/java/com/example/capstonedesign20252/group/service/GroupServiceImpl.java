@@ -29,7 +29,7 @@ public class GroupServiceImpl implements GroupService {
   private final GroupMemberRepository groupMemberRepository;
   private final ExcelParserService excelParserService;
 
-  @Transactional  // ⭐ 여기에 @Transactional 추가 (readOnly = true가 아님)
+  @Transactional
   public GroupResponseDto createGroup(Long userId, createGroupRequestDto dto, MultipartFile memberFile) {
     User user = userRepository.findById(userId)
                               .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
@@ -37,6 +37,7 @@ public class GroupServiceImpl implements GroupService {
     Group group = Group.builder()
                        .user(user)
                        .groupName(dto.groupName())
+                       .accountName(dto.accountName())
                        .description(dto.description())
                        .groupCategory(dto.groupCategory())
                        .fee(dto.fee())
@@ -77,17 +78,24 @@ public class GroupServiceImpl implements GroupService {
 
             // 기존 사용자가 없으면 새로 생성
             if (memberUser == null) {
-              // ⭐ 핵심 수정: loginType 추가!
-              User newUser = User.builder()
-                                 .name(memberData.name())
-                                 .phone(memberData.phone())
-                                 .email(memberData.email())
-                                 .loginType(LoginType.EXCEL)  // ✅ 추가!
-                                 .build();
-              memberUser = userRepository.save(newUser);
-              log.debug("신규 사용자 생성: {}", memberData.name());
-            } else {
-              log.debug("기존 사용자 발견: {} (ID: {})", memberUser.getName(), memberUser.getId());
+              // ⭐ 이메일로도 확인 (중복 방지)
+              if (memberData.email() != null && !memberData.email().isEmpty()) {
+                memberUser = userRepository.findByEmail(memberData.email()).orElse(null);
+              }
+
+              // 여전히 없으면 새로 생성
+              if (memberUser == null) {
+                User newUser = User.builder()
+                                   .name(memberData.name())
+                                   .phone(memberData.phone())
+                                   .email(memberData.email())
+                                   .loginType(LoginType.EXCEL)
+                                   .build();
+                memberUser = userRepository.save(newUser);
+                log.debug("신규 사용자 생성: {}", memberData.name());
+              } else {
+                log.debug("이메일로 기존 사용자 발견: {} (ID: {})", memberUser.getName(), memberUser.getId());
+              }
             }
 
             // 이미 그룹 멤버인지 확인
@@ -167,8 +175,15 @@ public class GroupServiceImpl implements GroupService {
         group.getId(),
         group.getUser().getId(),
         group.getGroupName(),
+        group.getAccountName(),
         group.getDescription(),
         group.getGroupCategory(),
         group.getFee());
+  }
+
+  @Override
+  public Group findByGroupId(Long groupId){
+    return groupRepository.findById(groupId)
+        .orElseThrow(() -> new IllegalArgumentException("해당 그룹이 존재하지 않습니다."));
   }
 }
