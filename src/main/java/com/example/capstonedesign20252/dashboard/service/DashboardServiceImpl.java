@@ -26,23 +26,34 @@ public class DashboardServiceImpl implements DashboardService {
   private final GroupRepository groupRepository;
   private final PaymentRepository paymentRepository;
 
-  /**
-   * 대시보드 데이터 조회 (캐시 사용)
-   * - 캐시에 있으면 캐시에서 반환
-   * - 없으면 DB에서 계산 후 캐시에 저장
-   */
   @Override
   @Cacheable(value = "dashboard", key = "#groupId")
   public DashboardResponseDto getDashBoard(Long groupId) {
-    log.info("📊 대시보드 데이터 계산 시작 - groupId: {}", groupId);
+    log.info("대시보드 데이터 계산 시작 - groupId: {}", groupId);
 
     Group group = groupRepository.findById(groupId)
                                  .orElseThrow(() -> new IllegalArgumentException("그룹을 찾을 수 없습니다."));
 
-    // 해당 그룹의 모든 결제 정보 조회
     List<Payment> payments = paymentRepository.findByGroupId(groupId);
 
-    // 통계 계산
+    if (payments.isEmpty()) {
+      log.warn("Payment 데이터가 없습니다 - groupId: {}", groupId);
+      return DashboardResponseDto.builder()
+                                 .groupId(groupId)
+                                 .groupName(group.getGroupName())
+                                 .totalMembers(0)
+                                 .paidMembers(0)
+                                 .unpaidMembers(0)
+                                 .totalAmount(BigDecimal.ZERO)
+                                 .paidAmount(BigDecimal.ZERO)
+                                 .unpaidAmount(BigDecimal.ZERO)
+                                 .paymentRate(0.0)
+                                 .recentPayments(List.of())
+                                 .lastUpdated(LocalDateTime.now())
+                                 .build();
+    }
+
+
     int totalMembers = payments.size();
     int paidMembers = (int) payments.stream()
                                     .filter(p -> "PAID".equals(p.getStatus()))
@@ -64,19 +75,19 @@ public class DashboardServiceImpl implements DashboardService {
         ? (double) paidMembers / totalMembers * 100
         : 0.0;
 
-    // 최근 입금 내역 (최근 10건)
     List<DashboardResponseDto.RecentPaymentDto> recentPayments = payments.stream()
-                                                                         .filter(p -> "PAID".equals(p.getStatus()))
-                                                                         .sorted((p1, p2) -> p2.getPaidAt().compareTo(p1.getPaidAt()))
-                                                                         .limit(10)
-                                                                         .map(p -> DashboardResponseDto.RecentPaymentDto.builder()
-                                                                                                                        .paymentId(p.getId())
-                                                                                                                        .memberName(p.getGroupMember().getUser().getName())
-                                                                                                                        .amount(p.getAmount())
-                                                                                                                        .paidAt(p.getPaidAt())
-                                                                                                                        .status(p.getStatus())
-                                                                                                                        .build())
-                                                                         .collect(Collectors.toList());
+                                 .filter(p -> "PAID".equals(p.getStatus()))
+                                 .filter(p -> p.getPaidAt() != null)
+                                 .sorted((p1, p2) -> p2.getPaidAt().compareTo(p1.getPaidAt()))
+                                 .limit(10)
+                                 .map(p -> DashboardResponseDto.RecentPaymentDto.builder()
+                                 .paymentId(p.getId())
+                                 .memberName(p.getGroupMember().getUser().getName())
+                                 .amount(p.getAmount())
+                                 .paidAt(p.getPaidAt())
+                                 .status(p.getStatus())
+                                 .build())
+                                  .collect(Collectors.toList());
 
     return DashboardResponseDto.builder()
                                .groupId(groupId)
@@ -93,12 +104,9 @@ public class DashboardServiceImpl implements DashboardService {
                                .build();
   }
 
-  /**
-   * 특정 그룹의 캐시 삭제
-   * - PaymentMatchingService에서 호출
-   */
+  @Override
   @CacheEvict(value = "dashboard", key = "#groupId")
   public void evictDashboardCache(Long groupId) {
-    log.info("🗑️ 대시보드 캐시 삭제 - groupId: {}", groupId);
+    log.info("대시보드 캐시 삭제 - groupId: {}", groupId);
   }
 }
