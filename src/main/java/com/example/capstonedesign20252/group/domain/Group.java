@@ -34,6 +34,9 @@ public class Group {
   @Column(name = "group_name", nullable = false)
   private String groupName;
 
+  @Column(name = "account_name", nullable = false)
+  private String accountName;
+
   @Column(name = "description", nullable = false)
   private String description;
 
@@ -45,9 +48,10 @@ public class Group {
   private Integer fee;
 
   @Builder
-  public Group(User user, String groupName, String description, GroupCategory groupCategory, Integer fee){
+  public Group(User user, String groupName, String accountName, String description, GroupCategory groupCategory, Integer fee){
     this.user = user;
     this.groupName = groupName;
+    this.accountName = accountName;
     this.description = description;
     this.groupCategory = groupCategory;
     this.fee = fee;

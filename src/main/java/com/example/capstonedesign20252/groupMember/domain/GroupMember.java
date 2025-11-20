@@ -37,9 +37,9 @@ public class GroupMember extends BaseEntity {
   private Boolean isAdmin;
 
   @Builder
-  public GroupMember(Group group, User user, Boolean isAdmin){
+  public GroupMember(Group group, User user, Boolean isAdmin, Integer payment, Boolean isPaid){
     this.group = group;
     this.user = user;
-    this.isAdmin = isAdmin;
+    this.isAdmin = isAdmin != null ? isAdmin : false;
   }
 }

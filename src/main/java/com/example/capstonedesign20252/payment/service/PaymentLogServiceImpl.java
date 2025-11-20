@@ -1,8 +1,8 @@
-package com.example.capstonedesign20252.paymentLog.service;
+package com.example.capstonedesign20252.payment.service;
 
-import com.example.capstonedesign20252.paymentLog.domain.PaymentLog;
-import com.example.capstonedesign20252.paymentLog.dto.PaymentRequestDto;
-import com.example.capstonedesign20252.paymentLog.repository.PaymentLogRepository;
+import com.example.capstonedesign20252.payment.domain.PaymentLog;
+import com.example.capstonedesign20252.payment.dto.PaymentRequestDto;
+import com.example.capstonedesign20252.payment.repository.PaymentLogRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,8 +15,8 @@ public class PaymentLogServiceImpl implements PaymentLogService {
   private final PaymentLogRepository paymentLogRepository;
 
   @Transactional
-  public void savePaymentLog(PaymentRequestDto paymentRequestDto){
+  public PaymentLog savePaymentLog(PaymentRequestDto paymentRequestDto){
     PaymentLog paymentLog = paymentRequestDto.toEntity();
-    paymentLogRepository.save(paymentLog);
+    return paymentLogRepository.save(paymentLog);
   }
 }

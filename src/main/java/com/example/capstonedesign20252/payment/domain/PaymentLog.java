@@ -1,10 +1,11 @@
-package com.example.capstonedesign20252.paymentLog.domain;
+package com.example.capstonedesign20252.payment.domain;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -28,14 +29,31 @@ public class PaymentLog {
   @Column(name = "target_account", nullable = false)
   private String targetAccount;
 
+  @Column(name = "received_at", nullable = false)
+  private LocalDateTime receivedAt;
+
+  @Column(name = "is_processed", nullable = false)
+  private Boolean isProcessed = false;
+
+  @Column(name = "mathced_payment_id")
+  private Long matchedPaymentId;
+
   @Builder
-  public PaymentLog(Long id, String name, Integer amount, String targetAccount){
-    if(amount != null){
-      if(amount <= 0) throw new IllegalArgumentException("송금 금액은 0원일 수 없습니다.");
+  public PaymentLog(Long id, String name, Integer amount,
+      String targetAccount, LocalDateTime receivedAt) {
+    if(amount != null && amount <= 0) {
+      throw new IllegalArgumentException("송금 금액은 0원일 수 없습니다.");
     }
     this.id = id;
     this.name = name;
     this.amount = amount;
     this.targetAccount = targetAccount;
+    this.receivedAt = receivedAt != null ? receivedAt : LocalDateTime.now();
+    this.isProcessed = false;
+  }
+
+  public void markAsProcessed(Long paymentId) {
+    this.isProcessed = true;
+    this.matchedPaymentId = paymentId;
   }
 }
