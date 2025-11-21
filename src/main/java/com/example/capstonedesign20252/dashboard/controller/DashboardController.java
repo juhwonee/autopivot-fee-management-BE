@@ -17,13 +17,13 @@ public class DashboardController {
 
   @GetMapping("/{groupId}/dashboard")
   public ResponseEntity<DashboardResponseDto> getDashboard(@PathVariable Long groupId) {
-    log.info("📊 대시보드 조회 요청 - groupId: {}", groupId);
+    log.info("대시보드 조회 요청 - groupId: {}", groupId);
     return ResponseEntity.ok(dashboardService.getDashBoard(groupId));
   }
 
   @PostMapping("/{groupId}/dashboard/refresh")
   public ResponseEntity<Void> refreshDashboard(@PathVariable Long groupId) {
-    log.info("🔄 대시보드 캐시 갱신 요청 - groupId: {}", groupId);
+    log.info("대시보드 캐시 갱신 요청 - groupId: {}", groupId);
     dashboardService.evictDashboardCache(groupId);
     return ResponseEntity.ok().build();
   }

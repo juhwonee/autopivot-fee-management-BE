@@ -37,7 +37,6 @@ public class KakaoAuthController {
 
     try{
       String jwtToken = kakaoAuthService.loginWithKakao(code);
-
       String redirectUrl = kakaoProperties.getFrontRedirectUri() + "?token=" + jwtToken;
       log.info("프론트엔드로 리다이렉트 - 로그인 성공");
 
