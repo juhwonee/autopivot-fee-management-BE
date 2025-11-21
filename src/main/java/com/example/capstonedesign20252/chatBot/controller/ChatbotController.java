@@ -1,4 +1,3 @@
-
 package com.example.capstonedesign20252.chatBot.controller;
 
 import com.example.capstonedesign20252.chatBot.dto.ChatRequestDto;
@@ -7,11 +6,10 @@ import com.example.capstonedesign20252.chatBot.service.ChatbotService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
@@ -22,16 +20,20 @@ public class ChatbotController {
 
   private final ChatbotService chatbotService;
 
+  /**
+   * 챗봇 메시지 처리
+   * POST /api/groups/{groupId}/chatbot/message
+   */
   @PostMapping("/{groupId}/chatbot/message")
   public ResponseEntity<ChatResponseDto> sendMessage(
-      @RequestParam Long groupId,
+      @PathVariable Long groupId,  // 🔥 수정: @RequestParam → @PathVariable
       @RequestBody ChatRequestDto request
   ){
-    log.info("=== 챗봇 메시지 수신: {}", request.message());
+    log.info("=== 챗봇 메시지 수신 (Group {}): {}", groupId, request.message());
 
     ChatResponseDto response = chatbotService.processMessage(groupId, request.message());
 
-    log.info("=== 챗봇 응답 전송: {}", response.response());
+    log.info("=== 챗봇 응답 전송 (Group {}): {}", groupId, response.response());
     return ResponseEntity.ok(response);
   }
 }
