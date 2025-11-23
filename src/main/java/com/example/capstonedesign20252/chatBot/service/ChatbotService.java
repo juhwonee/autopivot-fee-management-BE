@@ -21,10 +21,8 @@ public class ChatbotService {
 
   private final GeminiService geminiService;
   private final PaymentRepository paymentRepository;
-  private final GroupMemberRepository groupMemberRepository;  // 🔥 추가!
+  private final GroupMemberRepository groupMemberRepository;
   private final GroupService groupService;
-
-  // 🤖 시스템 프롬프트
   private static final String SYSTEM_PROMPT = """
             당신은 '오토피봇(Auto Fee Bot)' 동아리 회비 관리 시스템의 AI 어시스턴트 총총이입니다.
             
@@ -49,13 +47,11 @@ public class ChatbotService {
         group.getId(), group.getGroupName(), userMessage);
 
     try {
-      // 빠른 응답 처리 (키워드 기반)
       ChatResponseDto quickResponse = handleQuickResponse(groupId, userMessage);
       if (quickResponse != null) {
         return quickResponse;
       }
 
-      // Gemini AI 응답
       String aiResponse = geminiService.chat(SYSTEM_PROMPT, userMessage);
 
       return new ChatResponseDto(aiResponse, "text", null);
@@ -69,9 +65,6 @@ public class ChatbotService {
     }
   }
 
-  /**
-   * 키워드 기반 빠른 응답
-   */
   private ChatResponseDto handleQuickResponse(Long groupId, String message) {
     if (message == null) return null;
 
@@ -92,14 +85,9 @@ public class ChatbotService {
     return null;
   }
 
-  /**
-   * 미납자 명단 조회
-   * 🔥 수정: Payment 기반으로 미납자 조회
-   */
   private ChatResponseDto getUnpaidMembers(Long groupId) {
-    Group group = groupService.findByGroupId(groupId);
 
-    // Payment에서 PENDING 상태인 GroupMember 조회
+    Group group = groupService.findByGroupId(groupId);
     List<GroupMember> unpaidMembers = paymentRepository.findPendingGroupMemberByGroup(group.getId());
 
     if (unpaidMembers.isEmpty()) {
@@ -109,25 +97,18 @@ public class ChatbotService {
     StringBuilder response = new StringBuilder("**미납자 명단**\n\n");
     for (GroupMember member : unpaidMembers) {
       response.append(String.format("- %s (전화: %s)\n",
-          member.getName(),   //
-          member.getPhone()   //
+          member.getName(),
+          member.getPhone()
       ));
     }
 
     return new ChatResponseDto(response.toString(), "list", unpaidMembers);
   }
 
-  /**
-   * 회비 납부 통계
-   * 🔥 수정: Payment 엔티티 기반으로 통계 계산
-   */
   private ChatResponseDto getPaymentStatistics(Long groupId) {
+
     Group group = groupService.findByGroupId(groupId);
-
-    // 1. 그룹의 모든 멤버 수
     List<GroupMember> allMembers = groupMemberRepository.findByGroupId(groupId);
-
-    // 2. 그룹의 모든 Payment 조회
     List<Payment> allPayments = paymentRepository.findByGroupId(groupId);
 
     if (allPayments.isEmpty()) {
@@ -138,7 +119,6 @@ public class ChatbotService {
       );
     }
 
-    // 3. 통계 계산
     long paidCount = allPayments.stream()
                                 .filter(p -> "PAID".equals(p.getStatus()))
                                 .count();
@@ -151,31 +131,28 @@ public class ChatbotService {
                                    .filter(p -> "OVERDUE".equals(p.getStatus()))
                                    .count();
 
-    // 총 납부 금액
     double totalPaidAmount = allPayments.stream()
                                         .filter(p -> "PAID".equals(p.getStatus()))
                                         .mapToDouble(p -> p.getAmount().doubleValue())
                                         .sum();
 
-    // 목표 금액 (전체 회비)
     double totalTargetAmount = allPayments.stream()
                                           .mapToDouble(p -> p.getAmount().doubleValue())
                                           .sum();
 
-    // 납부율
     double paymentRate = allPayments.isEmpty() ? 0 : (paidCount * 100.0 / allPayments.size());
 
     String response = String.format("""
                 **회비 납부 현황**
                 
-                👥 전체 회원: %d명
-                ✅ 납부 완료: %d명
-                ⏳ 미납: %d명
-                ⚠️ 연체: %d명
+                전체 회원: %d명
+                납부 완료: %d명
+                미납: %d명
+                연체: %d명
                 
-                💰 총 납부 금액: %,d원
-                🎯 목표 금액: %,d원
-                📊 납부율: %.1f%%
+                총 납부 금액: %,d원
+                목표 금액: %,d원
+                납부율: %.1f%%
                 """,
         allMembers.size(),
         paidCount,
@@ -197,9 +174,6 @@ public class ChatbotService {
     ));
   }
 
-  /**
-   * 도움말 메시지
-   */
   private ChatResponseDto getHelpMessage() {
     String helpText = """
                 🤖 **오토피봇 사용 가이드**

@@ -59,6 +59,7 @@ public class SecurityConfig {
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
         .authorizeHttpRequests(auth -> auth
             .requestMatchers("/auth/**", "/login/**", "/api/auth/**").permitAll()
+            .requestMatchers("/api/groups/*/chatbot/**").permitAll()
             .anyRequest().authenticated()
         )
         .addFilterBefore(

@@ -20,13 +20,9 @@ public class ChatbotController {
 
   private final ChatbotService chatbotService;
 
-  /**
-   * 챗봇 메시지 처리
-   * POST /api/groups/{groupId}/chatbot/message
-   */
   @PostMapping("/{groupId}/chatbot/message")
   public ResponseEntity<ChatResponseDto> sendMessage(
-      @PathVariable Long groupId,  // 🔥 수정: @RequestParam → @PathVariable
+      @PathVariable Long groupId,
       @RequestBody ChatRequestDto request
   ){
     log.info("=== 챗봇 메시지 수신 (Group {}): {}", groupId, request.message());
