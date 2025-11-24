@@ -20,6 +20,6 @@ public class UserServiceImpl implements UserService {
   @Override
   public UserInfoResponseDto getUserInfo(Long userId) {
     return UserInfoResponseDto.from(userRepository.findById(userId)
-        .orElseThrow(() -> new IllegalArgumentException("해당 유저를 찾을 수 없습니다.")));
+        .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND)));
   }
 }
