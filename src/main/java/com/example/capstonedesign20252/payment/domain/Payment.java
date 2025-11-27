@@ -22,29 +22,29 @@ public class Payment {
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "group_id", nullable = false)
-  private Group group;  // 어느 그룹의 회비인지
+  private Group group;
 
   @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "group_member_id", nullable = false)
-  private GroupMember groupMember;  // 납부해야 할 회원
+  private GroupMember groupMember;
 
   @Column(nullable = false, precision = 10, scale = 2)
-  private BigDecimal amount;  // 납부 금액
+  private BigDecimal amount;
 
   @Column(nullable = false, length = 20)
-  private String status;  // PENDING(미납), PAID(납부완료), OVERDUE(연체)
+  private String status;
 
   @Column(name = "due_date")
-  private LocalDateTime dueDate;  // 납부 기한
+  private LocalDateTime dueDate;
 
   @Column(name = "paid_at")
-  private LocalDateTime paidAt;  // 실제 납부 시간
+  private LocalDateTime paidAt;
 
   @Column(name = "created_at", nullable = false)
-  private LocalDateTime createdAt;  // 등록 시간
+  private LocalDateTime createdAt;
 
   @Column(name = "payment_period")
-  private String paymentPeriod;  // 납부 주기 (예: "2025-01")
+  private String paymentPeriod;
 
   @Builder
   public Payment(Group group, GroupMember groupMember, BigDecimal amount,
@@ -52,25 +52,22 @@ public class Payment {
     this.group = group;
     this.groupMember = groupMember;
     this.amount = amount;
-    this.status = "PENDING";  // 기본값: 미납
+    this.status = "PENDING";
     this.dueDate = dueDate;
     this.paymentPeriod = paymentPeriod;
     this.createdAt = LocalDateTime.now();
   }
 
-  // 납부 완료 처리
   public void markAsPaid(LocalDateTime paidAt) {
     this.status = "PAID";
     this.paidAt = paidAt;
   }
 
-  // 수동 납부 처리
   public void manualPaid() {
     this.status = "PAID";
     this.paidAt = LocalDateTime.now();
   }
 
-  // 연체 상태로 변경
   public void markAsOverdue() {
     this.status = "OVERDUE";
   }

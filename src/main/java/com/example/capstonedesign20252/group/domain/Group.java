@@ -1,5 +1,6 @@
 package com.example.capstonedesign20252.group.domain;
 
+import com.example.capstonedesign20252.group.dto.UpdateRequestGroupDto;
 import com.example.capstonedesign20252.user.domain.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -55,5 +56,13 @@ public class Group {
     this.description = description;
     this.groupCategory = groupCategory;
     this.fee = fee;
+  }
+
+  public void updateGroup(UpdateRequestGroupDto updateRequestGroupDto){
+    if(updateRequestGroupDto.groupName() != null) this.groupName = updateRequestGroupDto.groupName();
+    if(updateRequestGroupDto.accountName() != null) this.accountName = updateRequestGroupDto.accountName();
+    if(updateRequestGroupDto.description() != null) this.description = updateRequestGroupDto.description();
+    if(updateRequestGroupDto.groupCategory() != null) this.groupCategory = updateRequestGroupDto.groupCategory();
+    if(updateRequestGroupDto.fee() != null) this.fee = updateRequestGroupDto.fee();
   }
 }

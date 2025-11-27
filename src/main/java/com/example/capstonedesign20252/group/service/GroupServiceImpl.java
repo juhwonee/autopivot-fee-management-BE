@@ -1,12 +1,17 @@
 package com.example.capstonedesign20252.group.service;
 
 import com.example.capstonedesign20252.group.domain.Group;
+import com.example.capstonedesign20252.group.domain.GroupErrorCode;
+import com.example.capstonedesign20252.group.domain.GroupException;
 import com.example.capstonedesign20252.group.dto.GroupResponseDto;
+import com.example.capstonedesign20252.group.dto.UpdateRequestGroupDto;
 import com.example.capstonedesign20252.group.dto.createGroupRequestDto;
 import com.example.capstonedesign20252.group.repository.GroupRepository;
 import com.example.capstonedesign20252.groupMember.domain.GroupMember;
 import com.example.capstonedesign20252.groupMember.repository.GroupMemberRepository;
 import com.example.capstonedesign20252.user.domain.User;
+import com.example.capstonedesign20252.user.exception.UserErrorCode;
+import com.example.capstonedesign20252.user.exception.UserException;
 import com.example.capstonedesign20252.user.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -24,20 +29,12 @@ public class GroupServiceImpl implements GroupService {
   private final UserRepository userRepository;
   private final GroupMemberRepository groupMemberRepository;
 
-  /**
-   * 그룹 생성 (멤버 없이)
-   *
-   * 변경사항:
-   * - User 정보를 GroupMember에 복사하여 저장
-   * - 그룹 생성자를 관리자 멤버로 추가 (isAdmin=true)
-   */
   @Transactional
   public GroupResponseDto createGroup(Long userId, createGroupRequestDto dto) {
-    // 1. 사용자 조회
-    User user = userRepository.findById(userId)
-                              .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
 
-    // 2. 그룹 생성
+    User user = userRepository.findById(userId)
+                              .orElseThrow(() -> new UserException(UserErrorCode.USER_NOT_FOUND));
+
     Group group = Group.builder()
                        .user(user)
                        .groupName(dto.groupName())
@@ -50,13 +47,12 @@ public class GroupServiceImpl implements GroupService {
     Group savedGroup = groupRepository.save(group);
     log.info("그룹 생성 완료: {} (ID: {})", savedGroup.getGroupName(), savedGroup.getId());
 
-    // 3. 그룹 생성자를 관리자로 추가 (User 정보 복사)
     GroupMember adminMember = GroupMember.builder()
                                          .group(savedGroup)
                                          .name(user.getName())
                                          .email(user.getEmail())
                                          .phone(user.getPhone())
-                                         .isAdmin(true)  // 리더
+                                         .isAdmin(true)
                                          .build();
     groupMemberRepository.save(adminMember);
     log.info("그룹 관리자 추가: {} ({})", user.getName(), user.getEmail());
@@ -67,7 +63,7 @@ public class GroupServiceImpl implements GroupService {
   @Override
   public GroupResponseDto getGroup(Long groupId) {
     Group group = groupRepository.findById(groupId)
-                                 .orElseThrow(() -> new IllegalArgumentException("해당 그룹이 존재하지 않습니다."));
+                                 .orElseThrow(() -> new GroupException(GroupErrorCode.GROUP_NOT_FOUND));
     return toDto(group);
   }
 
@@ -90,7 +86,27 @@ public class GroupServiceImpl implements GroupService {
   @Override
   @Transactional
   public void deleteGroup(Long groupId) {
-    groupRepository.deleteById(groupId);
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new GroupException(GroupErrorCode.GROUP_NOT_FOUND));
+
+    groupRepository.delete(group);
+  }
+
+  @Override
+  public Group findByGroupId(Long groupId){
+    return groupRepository.findById(groupId)
+                          .orElseThrow(() -> new GroupException(GroupErrorCode.GROUP_NOT_FOUND));
+  }
+
+  @Override
+  @Transactional
+  public GroupResponseDto updateGroup(Long groupId, UpdateRequestGroupDto updateRequestGroupDto) {
+
+    Group group = groupRepository.findById(groupId)
+        .orElseThrow(() -> new GroupException(GroupErrorCode.GROUP_NOT_FOUND));
+
+    group.updateGroup(updateRequestGroupDto);
+    return GroupResponseDto.from(group);
   }
 
   private GroupResponseDto toDto(Group group){
@@ -102,11 +118,5 @@ public class GroupServiceImpl implements GroupService {
         group.getDescription(),
         group.getGroupCategory(),
         group.getFee());
-  }
-
-  @Override
-  public Group findByGroupId(Long groupId){
-    return groupRepository.findById(groupId)
-                          .orElseThrow(() -> new IllegalArgumentException("해당 그룹이 존재하지 않습니다."));
   }
 }

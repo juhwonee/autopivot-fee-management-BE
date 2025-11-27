@@ -23,14 +23,14 @@ public class PaymentLogController {
   public ResponseEntity<Void> logPayment(@RequestBody PaymentRequestDto requestDto) {
     try {
       paymentLogService.savePaymentLog(requestDto);
-      logger.info("✅ [저장 성공] 결제 정보 DB 저장 완료: {}", requestDto.name());
+      logger.info("[저장 성공] 결제 정보 DB 저장 완료: {}", requestDto.name());
       return ResponseEntity.ok().build();
     } catch (IllegalArgumentException e) {
-      logger.error("❌ [저장 실패] 유효하지 않은 데이터: {}", e.getMessage());
-      return ResponseEntity.badRequest().build(); // 400 Bad Request 응답
+      logger.error("[저장 실패] 유효하지 않은 데이터: {}", e.getMessage());
+      return ResponseEntity.badRequest().build();
     } catch (Exception e) {
-      logger.error("❌ [저장 실패] 서버 내부 오류: {}", e.getMessage());
-      return ResponseEntity.internalServerError().build(); // 500 Internal Server Error 응답
+      logger.error("[저장 실패] 서버 내부 오류: {}", e.getMessage());
+      return ResponseEntity.internalServerError().build();
     }
   }
 }

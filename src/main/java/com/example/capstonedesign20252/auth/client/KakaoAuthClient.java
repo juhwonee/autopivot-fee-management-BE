@@ -54,13 +54,11 @@ public class KakaoAuthClient {
 
       log.info("Kakao Token API Response received successfully");
 
-      // body 자체가 null
       if (tokenResponse == null) {
         log.error("Kakao Token API response body is null");
         throw new KakaoException(KakaoErrorCode.TOKEN_REQUEST_FAILED_NULL_BODY);
       }
 
-      // access_token이 없는 경우
       if (tokenResponse.accessToken() == null) {
         log.error("Kakao Token API response does not contain access_token");
         throw new KakaoException(KakaoErrorCode.TOKEN_REQUEST_FAILED_NO_TOKEN);
@@ -72,7 +70,6 @@ public class KakaoAuthClient {
       log.error("Kakao Token API Connection Failed: {}", ex.getMessage());
       throw new KakaoException(KakaoErrorCode.CONNECTION_FAILED);
     } catch (KakaoException ex) {
-      // 이미 처리된 KakaoException은 그대로 던지기
       throw ex;
     } catch (Exception ex) {
       log.error("Unknown error during Kakao token request", ex);

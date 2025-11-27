@@ -23,14 +23,6 @@ public class PaymentMatchingService {
   private final PaymentRepository paymentRepository;
   private final DashboardService dashboardService;
 
-  /**
-   * PaymentLog와 Payment 매칭 및 처리
-   *
-   * 매칭 로직:
-   * 1. 통장 이름으로 Group 찾기
-   * 2. 입금자명 + 금액으로 Payment 매칭
-   * 3. 매칭 성공 시 상태 업데이트 + 캐시 삭제
-   */
   @Transactional
   public boolean matchAndProcessPayment(PaymentLog paymentLog) {
     log.info("🔍 입금 매칭 시작 - 입금자: {}, 금액: {}원, 통장: {}",
@@ -39,80 +31,63 @@ public class PaymentMatchingService {
         paymentLog.getTargetAccount());
 
     try {
-      // 1. 통장 이름으로 그룹 찾기
       Optional<Group> groupOpt = findGroupByAccountName(paymentLog.getTargetAccount());
 
       if (groupOpt.isEmpty()) {
-        log.warn("⚠️ 통장 이름과 매칭되는 그룹 없음: {}", paymentLog.getTargetAccount());
+        log.warn("통장 이름과 매칭되는 그룹 없음: {}", paymentLog.getTargetAccount());
         return false;
       }
 
       Group group = groupOpt.get();
-      log.info("✅ 그룹 매칭 성공: {} (ID: {})", group.getGroupName(), group.getId());
-
-      // 2. 해당 그룹의 PENDING 상태 결제 건 조회
+      log.info("그룹 매칭 성공: {} (ID: {})", group.getGroupName(), group.getId());
       List<Payment> pendingPayments = paymentRepository.findPendingPaymentsByGroup(group.getId());
 
       if (pendingPayments.isEmpty()) {
-        log.warn("⚠️ 그룹에 PENDING 상태의 결제 건 없음: {}", group.getGroupName());
+        log.warn("그룹에 PENDING 상태의 결제 건 없음: {}", group.getGroupName());
         return false;
       }
 
-      // 3. 입금자명 + 금액으로 매칭
       BigDecimal amount = BigDecimal.valueOf(paymentLog.getAmount());
       Optional<Payment> matchedPayment = pendingPayments.stream()
                                                         .filter(p -> matchesPayment(p, paymentLog.getName(), amount))
                                                         .findFirst();
 
       if (matchedPayment.isEmpty()) {
-        log.warn("⚠️ 매칭되는 결제 건 없음 - 입금자: {}, 금액: {}원",
+        log.warn("매칭되는 결제 건 없음 - 입금자: {}, 금액: {}원",
             paymentLog.getName(), amount);
         return false;
       }
 
-      // 4. 매칭 성공 → Payment 상태 업데이트
       Payment payment = matchedPayment.get();
       payment.markAsPaid(paymentLog.getReceivedAt());
       paymentRepository.save(payment);
 
-      // 5. PaymentLog 처리 완료 표시
       paymentLog.markAsProcessed(payment.getId());
-
-      // 6. 대시보드 캐시 삭제
       dashboardService.evictDashboardCache(group.getId());
 
-      log.info("🎉 입금 매칭 성공! - PaymentLog ID: {}, Payment ID: {}, 회원: {}",
+      log.info("입금 매칭 성공! - PaymentLog ID: {}, Payment ID: {}, 회원: {}",
           paymentLog.getId(),
           payment.getId(),
-          payment.getGroupMember().getName());  // 🔥 수정: getUser() 제거!
+          payment.getGroupMember().getName());
 
       return true;
 
     } catch (Exception e) {
-      log.error("❌ 입금 매칭 중 오류 발생", e);
+      log.error("입금 매칭 중 오류 발생", e);
       return false;
     }
   }
 
-  /**
-   * 통장 이름으로 그룹 찾기
-   *
-   * 우선순위:
-   * 1. 정확히 일치 (예: "ICON 모임 통장" = "ICON 모임 통장")
-   * 2. 통장 이름에 그룹명 포함 (예: "ICON 모임 통장"에 "ICON" 포함)
-   */
   private Optional<Group> findGroupByAccountName(String accountName) {
-    // 정확히 일치하는 그룹 찾기
     Optional<Group> exactMatch = groupRepository.findByAccountName(accountName);
     if (exactMatch.isPresent()) {
       return exactMatch;
     }
 
-    // 부분 매칭
     List<Group> partialMatches = groupRepository.findByAccountNameOrContainsGroupName(accountName);
     if (!partialMatches.isEmpty()) {
       if (partialMatches.size() > 1) {
-        log.warn("⚠️ 통장 이름과 여러 그룹이 매칭됨: {} → 첫 번째 선택", accountName);
+        log.warn("통장 이름과 여러 그룹이 매칭됨: {} → 첫 번째 선택", accountName);
       }
       return Optional.of(partialMatches.get(0));
     }
@@ -120,37 +95,23 @@ public class PaymentMatchingService {
     return Optional.empty();
   }
 
-  /**
-   * Payment와 입금 정보가 매칭되는지 확인
-   *
-   * 매칭 조건:
-   * 1. 금액이 정확히 일치
-   * 2. 입금자명이 회원명과 일치 (정확히 or 정규화 후)
-   */
   private boolean matchesPayment(Payment payment, String depositorName, BigDecimal amount) {
-    // 1. 금액 체크
     if (payment.getAmount().compareTo(amount) != 0) {
       return false;
     }
 
-    // 2. 이름 체크 - 🔥 수정: GroupMember에서 직접 name 가져오기
     String memberName = payment.getGroupMember().getName();
 
-    // 정확히 일치
     if (memberName.equals(depositorName)) {
       return true;
     }
 
-    // 정규화 후 비교 (공백, 특수문자 제거)
     String normalizedMemberName = normalizeName(memberName);
     String normalizedDepositorName = normalizeName(depositorName);
 
     return normalizedMemberName.equals(normalizedDepositorName);
   }
 
-  /**
-   * 이름 정규화 (공백, 특수문자 제거 + 소문자)
-   */
   private String normalizeName(String name) {
     if (name == null) return "";
     return name.replaceAll("[\\s\\-_.]", "").toLowerCase();
