@@ -4,7 +4,6 @@ import com.example.capstonedesign20252.excel.dto.MemberDataDto;
 import com.example.capstonedesign20252.group.domain.Group;
 import com.example.capstonedesign20252.group.domain.GroupErrorCode;
 import com.example.capstonedesign20252.group.domain.GroupException;
-import com.example.capstonedesign20252.group.dto.GroupResponseDto;
 import com.example.capstonedesign20252.group.service.GroupService;
 import com.example.capstonedesign20252.groupMember.domain.GroupMember;
 import com.example.capstonedesign20252.group.repository.GroupRepository;
@@ -14,7 +13,6 @@ import com.example.capstonedesign20252.groupMember.dto.AddGroupMemberDto;
 import com.example.capstonedesign20252.groupMember.dto.MemberResponseDto;
 import com.example.capstonedesign20252.groupMember.dto.UpdateGroupMemberDto;
 import com.example.capstonedesign20252.groupMember.repository.GroupMemberRepository;
-import com.example.capstonedesign20252.user.repository.UserRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +28,30 @@ public class GroupMemberService {
   private final GroupService groupService;
   private final GroupRepository groupRepository;
   private final GroupMemberRepository groupMemberRepository;
+
+  private boolean isDuplicateMember(Long groupId, String email, String phone, Long excludeMemberId) {
+    if (email != null && !email.isEmpty()) {
+      if (excludeMemberId != null) {
+        if (groupMemberRepository.existsByGroupIdAndEmailAndIdNot(groupId, email, excludeMemberId)) {
+          return true;
+        }
+      } else {
+        if (groupMemberRepository.existsByGroupIdAndEmail(groupId, email)) {
+          return true;
+        }
+      }
+    }
+
+    if (phone != null && !phone.isEmpty()) {
+      if (excludeMemberId != null) {
+        return groupMemberRepository.existsByGroupIdAndPhoneAndIdNot(groupId, phone,
+            excludeMemberId);
+      } else {
+        return groupMemberRepository.existsByGroupIdAndPhone(groupId, phone);
+      }
+    }
+    return false;
+  }
 
   public void validateGroupLeader(Long groupId, Long userId) {
     Group group = groupRepository.findById(groupId)
@@ -48,17 +70,7 @@ public class GroupMemberService {
     int addedCount = 0;
     for (MemberDataDto data : memberDataList) {
       try {
-        boolean alreadyExists = false;
-
-        if (data.email() != null && !data.email().isEmpty()) {
-          alreadyExists = groupMemberRepository.existsByGroupIdAndEmail(groupId, data.email());
-        }
-
-        if (!alreadyExists && data.phone() != null && !data.phone().isEmpty()) {
-          alreadyExists = groupMemberRepository.existsByGroupIdAndPhone(groupId, data.phone());
-        }
-
-        if (alreadyExists) {
+        if (isDuplicateMember(groupId, data.email(), data.phone(), null)) {
           log.warn("이미 그룹에 존재하는 멤버입니다: {} ({})", data.name(), data.email());
           continue;
         }
@@ -107,25 +119,36 @@ public class GroupMemberService {
   }
 
   @Transactional
-  public MemberResponseDto addGroupMember(Long groupId, AddGroupMemberDto addGroupMemberDto){
+  public MemberResponseDto addGroupMember(Long groupId, AddGroupMemberDto dto) {
     Group group = groupService.findByGroupId(groupId);
+
+    if (isDuplicateMember(groupId, dto.email(), dto.phone(), null)) {
+      throw new GroupMemberException(GroupMemberErrorCode.DUPLICATE_GROUP_MEMBER);
+    }
+
     GroupMember newMember = GroupMember.builder()
-        .group(group)
-        .name(addGroupMemberDto.name())
-        .email(addGroupMemberDto.email())
-        .phone(addGroupMemberDto.phone())
-        .build();
+                                       .group(group)
+                                       .name(dto.name())
+                                       .email(dto.email())
+                                       .phone(dto.phone())
+                                       .build();
 
     return MemberResponseDto.from(groupMemberRepository.save(newMember));
   }
 
   @Transactional
-  public MemberResponseDto updateGroupMember(Long groupId, Long memberId, UpdateGroupMemberDto updateGroupMemberDto){
-    Group group = groupService.findByGroupId(groupId);
-    GroupMember member = groupMemberRepository.findById(memberId)
-        .orElseThrow(() -> new IllegalArgumentException("해당 멤버가 존재하지 않습니다."));
+  public MemberResponseDto updateGroupMember(Long groupId, Long memberId, UpdateGroupMemberDto dto) {
+    groupService.findByGroupId(groupId);
 
-    member.updateGroupMember(updateGroupMemberDto);
+    GroupMember member = groupMemberRepository.findById(memberId)
+                                              .orElseThrow(() -> new GroupMemberException(GroupMemberErrorCode.MEMBER_NOT_FOUND));
+
+
+    if (isDuplicateMember(groupId, dto.email(), dto.phone(), memberId)) {
+      throw new GroupMemberException(GroupMemberErrorCode.DUPLICATE_GROUP_MEMBER);
+    }
+
+    member.updateGroupMember(dto);
     return MemberResponseDto.from(member);
   }
 }

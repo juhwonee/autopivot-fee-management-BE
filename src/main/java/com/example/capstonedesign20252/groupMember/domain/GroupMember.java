@@ -2,6 +2,7 @@ package com.example.capstonedesign20252.groupMember.domain;
 
 import com.example.capstonedesign20252.common.BaseEntity;
 import com.example.capstonedesign20252.group.domain.Group;
+import com.example.capstonedesign20252.groupMember.dto.AddGroupMemberDto;
 import com.example.capstonedesign20252.groupMember.dto.UpdateGroupMemberDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -11,6 +12,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
