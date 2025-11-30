@@ -22,4 +22,6 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
   @Query("SELECT gm FROM GroupMember gm WHERE gm.group.id = :groupId AND gm.name = :name")
   Optional<GroupMember> findByGroupIdAndName(@Param("groupId") Long groupId,
       @Param("name") String name);
+
+  long countByGroupId(Long groupId);
 }

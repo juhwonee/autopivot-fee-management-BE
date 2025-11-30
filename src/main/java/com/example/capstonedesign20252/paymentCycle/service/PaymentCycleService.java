@@ -18,6 +18,7 @@ import com.example.capstonedesign20252.paymentCycle.dto.PaymentCycleResponseDto;
 import com.example.capstonedesign20252.paymentCycle.dto.StartPaymentCycleRequestDto;
 import com.example.capstonedesign20252.paymentCycle.repository.PaymentCycleRepository;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,7 @@ public class PaymentCycleService {
     PaymentCycle cycle = PaymentCycle.builder()
                                      .group(group)
                                      .period(request.period())
+                                     .startDate(LocalDateTime.now())
                                      .dueDate(request.dueDate())
                                      .totalMembers(members.size())
                                      .monthlyFee(group.getFee())
@@ -83,7 +85,7 @@ public class PaymentCycleService {
     log.info("회비 수금 종료 - groupId: {}, cycleId: {}", groupId, cycleId);
 
     PaymentCycle cycle = paymentCycleRepository.findById(cycleId)
-        .orElseThrow(() -> new PaymentCycleException(PaymentCycleErrorCode.NOT_FOUND_CYCLE));
+                                               .orElseThrow(() -> new PaymentCycleException(PaymentCycleErrorCode.NOT_FOUND_CYCLE));
 
     if(!cycle.getGroup().getId().equals(groupId)){
       throw new PaymentCycleException(PaymentCycleErrorCode.NOT_CYCLE_PERIOD);
@@ -121,14 +123,14 @@ public class PaymentCycleService {
         .findByGroupIdAndPaymentPeriod(groupId, cycle.getPeriod());
 
     int paidMembers = (int) payments.stream()
-        .filter(p -> "PAID".equals(p.getStatus()))
-        .count();
+                                    .filter(p -> "PAID".equals(p.getStatus()))
+                                    .count();
     int unpaidMembers = cycle.getTotalMembers() - paidMembers;
 
     long totalCollected = payments.stream()
-        .filter(p -> "PAID".equals(p.getStatus()))
-        .mapToLong(p -> p.getAmount().longValue())
-        .sum();
+                                  .filter(p -> "PAID".equals(p.getStatus()))
+                                  .mapToLong(p -> p.getAmount().longValue())
+                                  .sum();
 
     int paymentRate = cycle.getTotalMembers() == 0 ? 0
         : (paidMembers * 100) / cycle.getTotalMembers();
@@ -152,8 +154,8 @@ public class PaymentCycleService {
 
   public List<PaymentCycleResponseDto> getCycleHistory(Long groupId) {
     return paymentCycleRepository.findByGroupIdOrderByCreatedAtDesc(groupId)
-        .stream()
-        .map(PaymentCycleResponseDto::from)
-        .toList();
+                                 .stream()
+                                 .map(PaymentCycleResponseDto::from)
+                                 .toList();
   }
 }

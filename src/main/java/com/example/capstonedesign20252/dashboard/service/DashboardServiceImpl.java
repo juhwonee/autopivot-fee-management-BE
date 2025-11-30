@@ -3,6 +3,7 @@ package com.example.capstonedesign20252.dashboard.service;
 import com.example.capstonedesign20252.dashboard.dto.DashboardResponseDto;
 import com.example.capstonedesign20252.group.domain.Group;
 import com.example.capstonedesign20252.group.repository.GroupRepository;
+import com.example.capstonedesign20252.groupMember.repository.GroupMemberRepository;
 import com.example.capstonedesign20252.payment.domain.Payment;
 import com.example.capstonedesign20252.payment.repository.PaymentRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +26,7 @@ public class DashboardServiceImpl implements DashboardService {
 
   private final GroupRepository groupRepository;
   private final PaymentRepository paymentRepository;
+  private final GroupMemberRepository groupMemberRepository;  // ✅ 추가
 
   @Override
   @Cacheable(value = "dashboard", key = "#groupId")
@@ -34,16 +36,20 @@ public class DashboardServiceImpl implements DashboardService {
     Group group = groupRepository.findById(groupId)
                                  .orElseThrow(() -> new IllegalArgumentException("그룹을 찾을 수 없습니다."));
 
+    // ✅ 실제 그룹 멤버 수 조회 (Payment가 없어도 멤버 수는 표시)
+    int actualMemberCount = (int) groupMemberRepository.countByGroupId(groupId);
+
     List<Payment> payments = paymentRepository.findByGroupId(groupId);
 
     if (payments.isEmpty()) {
-      log.warn("Payment 데이터가 없습니다 - groupId: {}", groupId);
+      log.info("Payment 데이터가 없습니다 - groupId: {}, 멤버 수: {}", groupId, actualMemberCount);
       return DashboardResponseDto.builder()
                                  .groupId(groupId)
                                  .groupName(group.getGroupName())
-                                 .totalMembers(0)
+                                 .fee(group.getFee())
+                                 .totalMembers(actualMemberCount)
                                  .paidMembers(0)
-                                 .unpaidMembers(0)
+                                 .unpaidMembers(actualMemberCount)
                                  .totalAmount(BigDecimal.ZERO)
                                  .paidAmount(BigDecimal.ZERO)
                                  .unpaidAmount(BigDecimal.ZERO)
@@ -52,7 +58,6 @@ public class DashboardServiceImpl implements DashboardService {
                                  .lastUpdated(LocalDateTime.now())
                                  .build();
     }
-
 
     int totalMembers = payments.size();
     int paidMembers = (int) payments.stream()
@@ -76,22 +81,23 @@ public class DashboardServiceImpl implements DashboardService {
         : 0.0;
 
     List<DashboardResponseDto.RecentPaymentDto> recentPayments = payments.stream()
-                                 .filter(p -> "PAID".equals(p.getStatus()))
-                                 .filter(p -> p.getPaidAt() != null)
-                                 .sorted((p1, p2) -> p2.getPaidAt().compareTo(p1.getPaidAt()))
-                                 .limit(10)
-                                 .map(p -> DashboardResponseDto.RecentPaymentDto.builder()
-                                 .paymentId(p.getId())
-                                 .memberName(p.getGroupMember().getName())
-                                 .amount(p.getAmount())
-                                 .paidAt(p.getPaidAt())
-                                 .status(p.getStatus())
-                                 .build())
-                                  .collect(Collectors.toList());
+                 .filter(p -> "PAID".equals(p.getStatus()))
+                 .filter(p -> p.getPaidAt() != null)
+                 .sorted((p1, p2) -> p2.getPaidAt().compareTo(p1.getPaidAt()))
+                 .limit(10)
+                 .map(p -> DashboardResponseDto.RecentPaymentDto.builder()
+                    .paymentId(p.getId())
+                    .memberName(p.getGroupMember().getName())
+                    .amount(p.getAmount())
+                    .paidAt(p.getPaidAt())
+                    .status(p.getStatus())
+                    .build())
+                 .collect(Collectors.toList());
 
     return DashboardResponseDto.builder()
                                .groupId(groupId)
                                .groupName(group.getGroupName())
+                               .fee(group.getFee())
                                .totalMembers(totalMembers)
                                .paidMembers(paidMembers)
                                .unpaidMembers(unpaidMembers)

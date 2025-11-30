@@ -61,6 +61,7 @@ public class SecurityConfig {
             .requestMatchers("/auth/**", "/login/**", "/api/auth/**").permitAll()
             .requestMatchers("/api/groups/*/chatbot/**").permitAll()
             .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+            .requestMatchers("/api/payments/log").permitAll()
             .anyRequest().authenticated()
         )
         .addFilterBefore(
