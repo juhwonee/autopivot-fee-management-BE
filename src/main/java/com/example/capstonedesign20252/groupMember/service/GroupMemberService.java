@@ -145,6 +145,12 @@ public class GroupMemberService {
     if (member.getIsAdmin()) {
       throw new GroupMemberException(GroupMemberErrorCode.NOT_DELETE_ADMIN);
     }
+
+    long paymentCount = paymentRepository.countByGroupMemberId(memberId);
+    if(paymentCount > 0) {
+      paymentRepository.deleteAllByGroupMemberId(memberId);
+    }
+
     groupMemberRepository.delete(member);
   }
 

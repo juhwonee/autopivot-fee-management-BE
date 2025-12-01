@@ -21,7 +21,8 @@ public class GeminiService {
   private String apiKey;
 
   private static final String BASE_URL = "https://generativelanguage.googleapis.com/v1beta";
-  private static final String MODEL_NAME = "gemini-2.5-flash";
+  private static final String MODEL_NAME = "gemini-2.0-flash";
+
   private final WebClient webClient;
   private final ObjectMapper objectMapper;
 
@@ -44,6 +45,9 @@ public class GeminiService {
     log.info("--------------------------------------------------");
   }
 
+  /**
+   * 사용 가능한 모델 목록 확인
+   */
   public void checkAvailableModels() {
     try {
       if (apiKey == null || apiKey.trim().isEmpty() || apiKey.startsWith("여기에")) {
@@ -77,11 +81,18 @@ public class GeminiService {
     }
   }
 
+  /**
+   * Gemini API를 통한 채팅 처리
+   *
+   * @param systemPrompt 시스템 프롬프트 (AI 역할 정의)
+   * @param userMessage 사용자 메시지
+   * @return AI 응답 문자열
+   */
   public String chat(String systemPrompt, String userMessage) {
     try {
       String cleanKey = apiKey.trim();
 
-      // 1. URL 생성 (인코딩 모드가 NONE이라 문자열 그대로 날아갑니다)
+      // 1. URL 생성 (인코딩 모드가 NONE이라 문자열 그대로 전송)
       String fullUrl = BASE_URL + "/models/" + MODEL_NAME + ":generateContent?key=" + cleanKey;
 
       log.info("🤖 Gemini 요청 시작: {}", MODEL_NAME);
@@ -103,7 +114,7 @@ public class GeminiService {
 
       // 3. 요청 전송
       String response = webClient.post()
-                                 .uri(fullUrl) // URI 객체 대신 문자열 그대로 넣기
+                                 .uri(fullUrl)
                                  .header("Content-Type", "application/json")
                                  .bodyValue(requestBody)
                                  .retrieve()
@@ -113,9 +124,11 @@ public class GeminiService {
       // 4. 응답 파싱
       JsonNode jsonNode = objectMapper.readTree(response);
       if (jsonNode.has("candidates") && !jsonNode.get("candidates").isEmpty()) {
-        return jsonNode.get("candidates").get(0)
-                       .get("content").get("parts").get(0)
-                       .get("text").asText();
+        String aiResponse = jsonNode.get("candidates").get(0)
+                                    .get("content").get("parts").get(0)
+                                    .get("text").asText();
+        log.info("🤖 Gemini 응답 완료");
+        return aiResponse;
       } else {
         return "AI 응답이 비어있습니다.";
       }

@@ -1,6 +1,5 @@
 package com.example.capstonedesign20252.groupMember.repository;
 
-import com.example.capstonedesign20252.group.domain.Group;
 import com.example.capstonedesign20252.groupMember.domain.GroupMember;
 import java.util.List;
 import java.util.Optional;
@@ -24,4 +23,5 @@ public interface GroupMemberRepository extends JpaRepository<GroupMember, Long> 
       @Param("name") String name);
 
   long countByGroupId(Long groupId);
+  List<GroupMember> findAllByGroupIdAndName(Long groupId, String name);
 }
