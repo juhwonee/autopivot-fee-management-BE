@@ -16,10 +16,19 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+
 @Entity
+@Table(name = "payment_cycles", indexes = {
+    @Index(name = "idx_group_status", columnList = "group_id, status"),
+    @Index(name = "idx_group_period", columnList = "group_id, period")
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "payment_cycles")
+@AllArgsConstructor
+@Builder
 public class PaymentCycle {
 
   @Id
@@ -30,11 +39,12 @@ public class PaymentCycle {
   @JoinColumn(name = "group_id", nullable = false)
   private Group group;
 
-  @Column(name = "period", nullable = false, length = 7)
+  @Column(name = "period", length = 7, nullable = false)
   private String period;
 
-  @Column(name = "status", nullable = false, length = 20)
-  private String status;
+  @Column(name = "status", length = 20, nullable = false)
+  @Builder.Default
+  private String status = "ACTIVE";
 
   @Column(name = "start_date", nullable = false)
   private LocalDateTime startDate;
@@ -45,33 +55,20 @@ public class PaymentCycle {
   @Column(name = "closed_at")
   private LocalDateTime closedAt;
 
-  @Column(name = "created_at", nullable = false)
-  private LocalDateTime createdAt;
-
   @Column(name = "total_members")
   private Integer totalMembers;
 
   @Column(name = "monthly_fee")
   private Integer monthlyFee;
 
-  @Builder
-  public PaymentCycle(Group group, String period, LocalDateTime dueDate,
-      Integer totalMembers, Integer monthlyFee) {
-    this.group = group;
-    this.period = period;
-    this.status = "ACTIVE";
-    this.startDate = LocalDateTime.now();
-    this.dueDate = dueDate;
-    this.totalMembers = totalMembers;
-    this.monthlyFee = monthlyFee;
-    this.createdAt = LocalDateTime.now();
-  }
+  @CreationTimestamp
+  @Column(name = "created_at", nullable = false, updatable = false)
+  private LocalDateTime createdAt;
 
   public void close() {
     this.status = "CLOSED";
     this.closedAt = LocalDateTime.now();
   }
-
   public boolean isActive() {
     return "ACTIVE".equals(this.status);
   }

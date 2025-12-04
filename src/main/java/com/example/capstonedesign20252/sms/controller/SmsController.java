@@ -4,6 +4,7 @@ import com.example.capstonedesign20252.groupMember.domain.GroupMember;
 import com.example.capstonedesign20252.groupMember.repository.GroupMemberRepository;
 import com.example.capstonedesign20252.sms.dto.SendBulkSmsRequestDto;
 import com.example.capstonedesign20252.sms.dto.SendSmsRequestDto;
+import com.example.capstonedesign20252.sms.service.SmsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -19,7 +20,7 @@ import java.util.Map;
 public class SmsController {
 
   private final GroupMemberRepository groupMemberRepository;
-  // private final SmsService smsService;  // CoolSMS 연동 시 주입
+  private final SmsService smsService;  // ✅ 주입
 
   // 개별 SMS 발송
   @PostMapping("/send")
@@ -27,7 +28,6 @@ public class SmsController {
     log.info("SMS 발송 요청 - memberId: {}, phone: {}, message: {}",
         request.memberId(), request.phone(), request.message());
 
-    // 전화번호 검증
     if (request.phone() == null || request.phone().isEmpty()) {
       return ResponseEntity.badRequest().body(Map.of(
           "success", false,
@@ -37,11 +37,10 @@ public class SmsController {
     }
 
     try {
-      // TODO: 실제 CoolSMS 연동
-      // String cleanPhone = request.phone().replaceAll("-", "");
-      // smsService.send(cleanPhone, request.message());
+      // ✅ 실제 CoolSMS 발송
+      smsService.send(request.phone(), request.message());
 
-      log.info("SMS 발송 성공 (테스트) - phone: {}", request.phone());
+      log.info("SMS 발송 성공 - phone: {}", request.phone());
 
       return ResponseEntity.ok(Map.of(
           "success", true,
@@ -52,7 +51,7 @@ public class SmsController {
       log.error("SMS 발송 실패 - phone: {}, error: {}", request.phone(), e.getMessage());
       return ResponseEntity.internalServerError().body(Map.of(
           "success", false,
-          "message", "SMS 발송 중 오류가 발생했습니다.",
+          "message", "SMS 발송 중 오류가 발생했습니다: " + e.getMessage(),
           "recipient", request.phone()
       ));
     }
@@ -76,11 +75,10 @@ public class SmsController {
           continue;
         }
 
-        // TODO: 실제 CoolSMS 연동
-        // String cleanPhone = member.getPhone().replaceAll("-", "");
-        // smsService.send(cleanPhone, request.message());
+        // ✅ 실제 CoolSMS 발송
+        smsService.send(member.getPhone(), request.message());
 
-        log.info("SMS 발송 성공 (테스트) - name: {}, phone: {}", member.getName(), member.getPhone());
+        log.info("SMS 발송 성공 - name: {}, phone: {}", member.getName(), member.getPhone());
         sentCount++;
       } catch (Exception e) {
         log.error("SMS 발송 실패 - name: {}, error: {}", member.getName(), e.getMessage());

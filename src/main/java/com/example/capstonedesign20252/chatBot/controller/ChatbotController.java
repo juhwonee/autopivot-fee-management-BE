@@ -24,7 +24,7 @@ public class ChatbotController {
   public ResponseEntity<ChatResponseDto> sendMessage(
       @PathVariable Long groupId,
       @RequestBody ChatRequestDto request
-  ){
+  ) {
     log.info("=== 챗봇 메시지 수신 (Group {}): {}", groupId, request.message());
 
     ChatResponseDto response = chatbotService.processMessage(groupId, request.message());

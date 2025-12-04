@@ -4,6 +4,7 @@ import com.example.capstonedesign20252.fee.dto.FeesResponseDto;
 import com.example.capstonedesign20252.fee.dto.MemberPaymentDto;
 import com.example.capstonedesign20252.group.domain.Group;
 import com.example.capstonedesign20252.group.repository.GroupRepository;
+import com.example.capstonedesign20252.group.service.GroupService;
 import com.example.capstonedesign20252.groupMember.domain.GroupMember;
 import com.example.capstonedesign20252.groupMember.repository.GroupMemberRepository;
 import com.example.capstonedesign20252.payment.domain.Payment;
@@ -25,42 +26,32 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class FeeService {
 
-  private final GroupRepository groupRepository;
+  private final GroupService groupService;
   private final GroupMemberRepository groupMemberRepository;
   private final PaymentRepository paymentRepository;
 
   public FeesResponseDto getFeesStatus(Long groupId, String period) {
-    // 1. 그룹 조회
-    Group group = groupRepository.findById(groupId)
-                                 .orElseThrow(() -> new IllegalArgumentException("그룹을 찾을 수 없습니다. groupId: " + groupId));
 
-    // 2. 그룹 멤버 조회
+    Group group = groupService.findByGroupId(groupId);
     List<GroupMember> members = groupMemberRepository.findByGroupId(groupId);
 
-    // 3. 해당 월의 Payment 조회
     List<Payment> payments = paymentRepository.findByGroupIdAndPaymentPeriod(groupId, period);
-
-    // 4. 멤버별 Payment 매핑 (memberId -> Payment)
     Map<Long, Payment> paymentMap = payments.stream()
                                             .collect(Collectors.toMap(
                                                 p -> p.getGroupMember().getId(),
                                                 p -> p,
-                                                (p1, p2) -> p1  // 중복 시 첫 번째 사용
+                                                (p1, p2) -> p1
                                             ));
 
-    // 5. 현재 날짜 (연체 판단용)
     LocalDateTime now = LocalDateTime.now();
-
-    // 6. 멤버별 납부 현황 생성
     List<MemberPaymentDto> memberPayments = members.stream()
                                                    .map(member -> {
                                                      Payment payment = paymentMap.get(member.getId());
 
                                                      if (payment == null) {
-                                                       // Payment 레코드가 없으면 PENDING으로 처리
                                                        return new MemberPaymentDto(
                                                            member.getId(),
-                                                           null,  // paymentId 없음
+                                                           null,
                                                            member.getName(),
                                                            member.getPhone(),
                                                            0,
@@ -69,10 +60,8 @@ public class FeeService {
                                                        );
                                                      }
 
-                                                     // status 결정 로직
                                                      String status = payment.getStatus();
 
-                                                     // PENDING인데 dueDate가 지났으면 OVERDUE로 변경
                                                      if ("PENDING".equals(status) && payment.getDueDate() != null
                                                          && payment.getDueDate().isBefore(now)) {
                                                        status = "OVERDUE";
@@ -90,7 +79,6 @@ public class FeeService {
                                                    })
                                                    .collect(Collectors.toList());
 
-    // 7. 통계 계산
     int totalMembers = members.size();
     int paidMembers = (int) memberPayments.stream()
                                           .filter(m -> "PAID".equals(m.status()))

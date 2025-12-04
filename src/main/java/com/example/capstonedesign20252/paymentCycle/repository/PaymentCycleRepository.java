@@ -17,5 +17,10 @@ public interface PaymentCycleRepository extends JpaRepository<PaymentCycle, Long
   Optional<PaymentCycle> findByGroupIdAndPeriod(@Param("groupId") Long groupId,
                                                  @Param("period") String period);
 
+  boolean existsByGroupIdAndStatus(Long groupId, String status);
+
   List<PaymentCycle> findByGroupIdOrderByCreatedAtDesc(Long groupId);
+
+  @Query("SELECT pc FROM PaymentCycle pc WHERE pc.group.id = :groupId ORDER BY pc.createdAt DESC")
+  List<PaymentCycle> findRecentByGroupId(@Param("groupId") Long groupId);
 }

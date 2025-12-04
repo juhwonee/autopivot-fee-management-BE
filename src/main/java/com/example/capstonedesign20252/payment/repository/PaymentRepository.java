@@ -5,6 +5,7 @@ import com.example.capstonedesign20252.payment.domain.Payment;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -53,4 +54,10 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
       @Param("period") String period,
       @Param("status") String status);
 
+  @Modifying
+  @Query("DELETE FROM Payment p WHERE p.groupMember.id = :memberId")
+  void deleteAllByGroupMemberId(@Param("memberId") Long memberId);
+
+
+  long countByGroupMemberId(Long groupMemberId);
 }

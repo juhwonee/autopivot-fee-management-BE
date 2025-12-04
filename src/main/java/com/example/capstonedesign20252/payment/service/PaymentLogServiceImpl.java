@@ -12,6 +12,7 @@ import com.example.capstonedesign20252.payment.repository.PaymentRepository;
 import com.example.capstonedesign20252.paymentCycle.domain.PaymentCycle;
 import com.example.capstonedesign20252.paymentCycle.repository.PaymentCycleRepository;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,6 +45,7 @@ public class PaymentLogServiceImpl implements PaymentLogService {
 
     log.info("PaymentLog 저장 완료 - logId: {}", paymentLog.getId());
 
+    // 1. 그룹 매칭
     Optional<Group> groupOpt = groupRepository
         .findByAccountName(requestDto.targetAccount());
 
@@ -55,6 +57,7 @@ public class PaymentLogServiceImpl implements PaymentLogService {
     Group group = groupOpt.get();
     log.info("그룹 매칭 성공 - groupId: {}, groupName: {}", group.getId(), group.getGroupName());
 
+    // 2. 활성 수금 기간 매칭
     Optional<PaymentCycle> activeCycleOpt = paymentCycleRepository
         .findByGroupIdAndStatus(group.getId(), "ACTIVE");
 
@@ -66,43 +69,57 @@ public class PaymentLogServiceImpl implements PaymentLogService {
     PaymentCycle cycle = activeCycleOpt.get();
     log.info("수금 기간 매칭 - cycleId: {}, period: {}", cycle.getId(), cycle.getPeriod());
 
-    Optional<GroupMember> memberOpt = groupMemberRepository
-        .findByGroupIdAndName(group.getId(), requestDto.name());
+    // 3. 동명이인 처리: 해당 이름의 모든 멤버 조회
+    List<GroupMember> members = groupMemberRepository
+        .findAllByGroupIdAndName(group.getId(), requestDto.name());
 
-    if (memberOpt.isEmpty()) {
+    if (members.isEmpty()) {
       log.warn("멤버 매칭 실패 - groupId: {}, name: '{}'", group.getId(), requestDto.name());
       return;
     }
 
-    GroupMember member = memberOpt.get();
-    log.info("멤버 매칭 성공 - memberId: {}, name: {}", member.getId(), member.getName());
+    log.info("동명이인 확인 - name: '{}', 찾은 멤버 수: {}", requestDto.name(), members.size());
 
-    Optional<Payment> paymentOpt = paymentRepository
-        .findByGroupMemberIdAndPaymentPeriodAndStatus(
-            member.getId(), cycle.getPeriod(), "PENDING");
+    // 4. 미납자 우선 매칭: PENDING 상태인 Payment가 있는 멤버 찾기
+    GroupMember matchedMember = null;
+    Payment matchedPayment = null;
 
-    if (paymentOpt.isEmpty()) {
-      log.warn("PENDING Payment 없음 - memberId: {}, period: {}",
-          member.getId(), cycle.getPeriod());
+    for (GroupMember member : members) {
+      Optional<Payment> paymentOpt = paymentRepository
+          .findByGroupMemberIdAndPaymentPeriodAndStatus(
+              member.getId(), cycle.getPeriod(), "PENDING");
+
+      if (paymentOpt.isPresent()) {
+        matchedMember = member;
+        matchedPayment = paymentOpt.get();
+        log.info("미납자 매칭 성공 - memberId: {}, name: {}", member.getId(), member.getName());
+        break;
+      } else {
+        log.info("이미 납부 완료 - memberId: {}, name: {}", member.getId(), member.getName());
+      }
+    }
+
+    // 5. 매칭된 미납자가 없으면 종료
+    if (matchedMember == null || matchedPayment == null) {
+      log.warn("PENDING Payment 없음 - 동명이인 {}명 모두 이미 납부 완료 또는 Payment 없음", members.size());
       return;
     }
 
-    Payment payment = paymentOpt.get();
-
-    int requiredAmount = payment.getAmount().intValue();
+    // 6. 납부 처리
+    int requiredAmount = matchedPayment.getAmount().intValue();
     int paidAmount = requestDto.amount();
 
     if (paidAmount >= requiredAmount) {
       LocalDateTime paidAt = requestDto.receivedAt() != null ?
           requestDto.receivedAt() : LocalDateTime.now();
-      payment.markAsPaid(paidAt);
-      paymentLog.markAsProcessed(payment.getId());
+      matchedPayment.markAsPaid(paidAt);
+      paymentLog.markAsProcessed(matchedPayment.getId());
 
       log.info("납부 완료 처리 - member: {}, amount: {}, paymentId: {}",
-          member.getName(), paidAmount, payment.getId());
+          matchedMember.getName(), paidAmount, matchedPayment.getId());
     } else {
       log.info("부분 납부 감지 - member: {}, paid: {}, required: {}",
-          member.getName(), paidAmount, requiredAmount);
+          matchedMember.getName(), paidAmount, requiredAmount);
     }
   }
 }
